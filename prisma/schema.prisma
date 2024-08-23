@@ -1,0 +1,106 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+    // url = env("POSTGRES_URL") // uses connection pooling
+    // directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model User {
+    id         Int       @id @default(autoincrement())
+    username   String    @unique
+    email      String    @unique
+    avatar     String?
+    password   String
+    provider   String?
+    providerId String?
+    verified   Boolean   @default(false)
+    verifiedAt DateTime?
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+
+    cart Cart?
+}
+
+model Category {
+    id        Int       @id @default(autoincrement())
+    name      String
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    products  Product[]
+}
+
+model Product {
+    id          Int           @id @default(autoincrement())
+    name        String        @unique
+    description String?
+    image       String
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+    items       ProductItem[]
+    category    Category      @relation(fields: [categoryId], references: [id])
+    ingredients Ingredient[]  @relation("MainProductIngredients")
+    addivities  Ingredient[]  @relation("AdditiveProductsIngredient")
+    categoryId  Int
+}
+
+model ProductItem {
+    id            Int        @id @default(autoincrement())
+    size          Size       @default(SMALL)
+    name          String
+    weight        Float?
+    price         Int
+    isTraditional Boolean    @default(true)
+    isThin        Boolean    @default(false)
+    product       Product    @relation(fields: [productId], references: [id])
+    cartItems     CartItem[]
+    productId     Int
+}
+
+model Ingredient {
+    id                       Int        @id @default(autoincrement())
+    name                     String
+    priceMin                 Int
+    priceAvg                 Int
+    priceMax                 Int
+    image                    String
+    createdAt                DateTime   @default(now())
+    updatedAt                DateTime   @updatedAt
+    productsAsMainIngredient Product[]  @relation("MainProductIngredients")
+    productsAsAdditive       Product[]  @relation("AdditiveProductsIngredient")
+    cartItems                CartItem[]
+}
+
+model Cart {
+    id        Int        @id @default(autoincrement())
+    ip        String?    @unique
+    userId    Int?       @unique
+    user      User?      @relation(fields: [userId], references: [id])
+    items     CartItem[]
+    createdAt DateTime   @default(now())
+}
+
+model CartItem {
+    id            Int          @id @default(autoincrement())
+    count         Int          @default(1)
+    cartId        Int
+    productItemId Int
+    cart          Cart         @relation(fields: [cartId], references: [id])
+    productItem   ProductItem  @relation(fields: [productItemId], references: [id])
+    type          PizzaType    @default(TRADIONAL)
+    ingredients   Ingredient[]
+}
+
+enum Size {
+    SMALL
+    MEDIUM
+    LARGE
+}
+
+enum PizzaType {
+    TRADIONAL
+    THIN
+}
